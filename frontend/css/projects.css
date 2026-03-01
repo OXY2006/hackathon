@@ -1,0 +1,278 @@
+/* ── projects.css — Full-page projects view ──────────────────── */
+
+.projects-page {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: var(--cream);
+  transform: translateX(100%);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.projects-page.open { transform: translateX(0); }
+
+/* Top bar */
+.projects-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(248, 242, 230, 0.95);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border-md);
+  padding: 0 32px;
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--ink-light);
+  padding: 8px 0;
+  transition: color 0.2s;
+}
+.back-btn:hover { color: var(--forest); }
+.back-btn svg { width: 16px; height: 16px; }
+
+.projects-topbar-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.projects-topbar-title span {
+  color: var(--terracotta);
+  font-style: italic;
+}
+
+/* Body */
+.projects-body {
+  padding: 48px 32px 80px;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Faculty hero strip */
+.proj-faculty-hero {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+  padding: 32px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 48px;
+  box-shadow: var(--shadow-sm);
+}
+
+.proj-faculty-photo {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 4px solid var(--parchment);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  background: var(--parchment);
+  box-shadow: var(--shadow-sm);
+}
+
+.proj-faculty-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.proj-faculty-sub {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+  margin-bottom: 12px;
+}
+
+.proj-count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--forest);
+  color: white;
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Section title */
+.projects-section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.projects-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-md);
+}
+
+/* Faculty group (used in All Projects view) */
+.faculty-group { margin-bottom: 48px; }
+.faculty-group-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.faculty-group-emoji { font-size: 1.5rem; }
+.faculty-group-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.faculty-group-sub {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+}
+
+/* Projects grid */
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+/* Project card */
+.project-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.project-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.project-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Department accent top bar */
+.project-card.proj-cse::before   { background: linear-gradient(90deg, #2b5c3f, #3d7a57); }
+.project-card.proj-ece::before   { background: linear-gradient(90deg, #2a6c8a, #3a8caa); }
+.project-card.proj-mech::before  { background: linear-gradient(90deg, #c85a30, #e07a52); }
+.project-card.proj-civil::before { background: linear-gradient(90deg, #c49a1a, #ddb42c); }
+.project-card.proj-math::before  { background: linear-gradient(90deg, #6a3d8f, #8a5daf); }
+
+/* Status badge */
+.proj-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+}
+.proj-status.ongoing   { background: #e8f3ed; color: var(--forest); }
+.proj-status.completed { background: #eef2f8; color: var(--sky); }
+.proj-status.open      { background: #fdf5e6; color: var(--gold); }
+
+.proj-status.ongoing::before   { content: '●'; font-size: 0.5rem; }
+.proj-status.completed::before { content: '✓'; }
+.proj-status.open::before      { content: '◎'; font-size: 0.6rem; }
+
+.proj-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.proj-desc {
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: var(--ink-light);
+  margin-bottom: 16px;
+}
+
+.proj-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.proj-tag {
+  font-size: 0.7rem;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: var(--parchment);
+  color: var(--ink-muted);
+  border: 1px solid var(--border);
+}
+
+.proj-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+}
+
+.proj-students {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.proj-students svg { width: 12px; height: 12px; }
+.proj-students.open-slot { color: var(--gold); }
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .projects-body { padding: 24px 16px 60px; }
+  .proj-faculty-hero { flex-direction: column; text-align: center; }
+  .projects-grid { grid-template-columns: 1fr; }
+}

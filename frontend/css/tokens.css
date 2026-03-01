@@ -1,0 +1,118 @@
+/* ── tokens.css — Design variables & global reset ─────────── */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html { scroll-behavior: smooth; }
+
+:root {
+  --cream:       #f8f2e6;
+  --parchment:   #ede5d0;
+  --deep-parch:  #e0d5bc;
+  --ink:         #1c1a16;
+  --ink-light:   #4a4640;
+  --ink-muted:   #8a8278;
+  --forest:      #2b5c3f;
+  --forest-lt:   #3d7a57;
+  --terracotta:  #c85a30;
+  --terra-lt:    #e07a52;
+  --gold:        #c49a1a;
+  --gold-lt:     #ddb42c;
+  --sky:         #2a6c8a;
+
+  --border:      rgba(28, 26, 22, 0.12);
+  --border-md:   rgba(28, 26, 22, 0.18);
+
+  --shadow-sm:   0 2px 10px rgba(28, 26, 22, 0.07);
+  --shadow-md:   0 6px 28px rgba(28, 26, 22, 0.11);
+  --shadow-lg:   0 16px 56px rgba(28, 26, 22, 0.15);
+
+  --radius:      6px;
+  --nav-h:       66px;
+}
+
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: 'Barlow', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Grain texture overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9998;
+  opacity: 0.7;
+}
+
+/* ── Loading state ───────────────────────────────────────────── */
+.loading-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 80px 20px;
+  color: var(--ink-muted);
+  font-family: 'Lora', serif;
+  font-style: italic;
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--parchment);
+  border-top-color: var(--forest);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Empty state ─────────────────────────────────────────────── */
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.empty-state svg {
+  width: 64px;
+  height: 64px;
+  opacity: 0.2;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  color: var(--ink-muted);
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  font-size: 0.88rem;
+  color: var(--ink-muted);
+}
+
+/* ── Animations ──────────────────────────────────────────────── */
+@keyframes cardRise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
