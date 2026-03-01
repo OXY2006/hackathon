@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Scholar Suite — Student-Professor DBMS Frontend
 
 A full faculty directory web app with search, filtering, bookmarking, and a project viewer.
@@ -82,3 +83,7 @@ To swap the flat JS data files for a real DB (MySQL, PostgreSQL, etc.):
 1. Replace `backend/data/faculty.js` and `backend/data/projects.js` with async DB query functions.
 2. Update `backend/routes/faculty.js` and `backend/routes/projects.js` to `await` those functions.
 3. No frontend changes required — the API contract stays the same.
+=======
+# Student-Professor-Database-Management-System
+Student–Faculty Information &amp; Appointment Portal is a student-only web app where students can view faculty cabin details, contact info, availability status, and free timings. Students can request meetings or phone calls. Faculty/admin do not log in; updates are handled externally and reflected in the system database.
+>>>>>>> 3e6078a4eede3c85ebc8c54b9160515793977151
