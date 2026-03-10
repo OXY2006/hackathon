@@ -39,6 +39,16 @@ function Navbar() {
             >
               Dashboard
             </Link>
+            <Link
+              to="/model-performance"
+              className={`text-sm font-medium transition-colors ${
+                location.pathname === '/model-performance'
+                  ? 'text-primary-600'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Model Performance
+            </Link>
           </div>
         </div>
       </div>

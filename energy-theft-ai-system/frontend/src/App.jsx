@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import Results from './pages/Results'
+import ModelPerformance from './pages/ModelPerformance'
 import { useState } from 'react'
 
 function App() {
@@ -32,6 +33,10 @@ function App() {
                 />
               }
             />
+            <Route
+              path="/model-performance"
+              element={<ModelPerformance />}
+            />
           </Routes>
         </main>
       </div>
@@ -40,3 +45,4 @@ function App() {
 }
 
 export default App
+

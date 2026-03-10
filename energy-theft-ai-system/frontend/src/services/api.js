@@ -13,7 +13,9 @@ export async function uploadCSV(file) {
 
 export async function detectAnomalies(data) {
   const response = await axios.post(`${API_BASE}/detect`, { data }, {
-    timeout: 120000,
+    timeout: 300000,
+    maxContentLength: 200 * 1024 * 1024,
+    maxBodyLength: 200 * 1024 * 1024,
   })
   return response.data
 }
@@ -22,3 +24,9 @@ export async function getReport(meterId) {
   const response = await axios.get(`${API_BASE}/report/${meterId}`)
   return response.data
 }
+
+export async function getModelResults() {
+  const response = await axios.get(`${API_BASE}/model-results`)
+  return response.data
+}
+

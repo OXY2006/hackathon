@@ -16,9 +16,9 @@ const detectAnomalies = async (req, res) => {
     const response = await axios.post(`${AI_SERVICE_URL}/analyze`, {
       meter_data: data
     }, {
-      timeout: 120000, // 2 min timeout for large datasets
-      maxContentLength: 50 * 1024 * 1024,
-      maxBodyLength: 50 * 1024 * 1024,
+      timeout: 300000, // 5 min timeout for large datasets
+      maxContentLength: 200 * 1024 * 1024,
+      maxBodyLength: 200 * 1024 * 1024,
     });
 
     const results = response.data;

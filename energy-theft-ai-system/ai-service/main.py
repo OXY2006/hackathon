@@ -2,10 +2,8 @@
 FastAPI AI Microservice for Energy Theft Detection.
 Orchestrates: Feature Engineering → Isolation Forest + Random Forest → SHAP → LLM Explanation
 """
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List, Optional
 import pandas as pd
 import numpy as np
 import traceback
@@ -26,29 +24,33 @@ app.add_middleware(
 )
 
 
-class MeterReading(BaseModel):
-    meter_id: str
-    timestamp: str
-    consumption_kwh: float
-    latitude: float
-    longitude: float
-
-
-class AnalyzeRequest(BaseModel):
-    meter_data: List[MeterReading]
-
-
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "energy-theft-ai"}
 
 
 @app.post("/analyze")
-def analyze(request: AnalyzeRequest):
+async def analyze(request: Request):
     try:
-        # Convert to DataFrame
-        data = [r.dict() for r in request.meter_data]
-        df = pd.DataFrame(data)
+        # Parse raw JSON body — no strict Pydantic validation
+        body = await request.json()
+        
+        raw_data = body.get("meter_data", [])
+        if not raw_data or not isinstance(raw_data, list):
+            raise HTTPException(status_code=400, detail="No meter_data array provided")
+        
+        # Normalize each record, filling missing fields with defaults
+        cleaned = []
+        for row in raw_data:
+            cleaned.append({
+                "meter_id": str(row.get("meter_id", "")),
+                "timestamp": str(row.get("timestamp", "")),
+                "consumption_kwh": float(row.get("consumption_kwh", 0) or 0),
+                "latitude": float(row.get("latitude", 0) or 0),
+                "longitude": float(row.get("longitude", 0) or 0),
+            })
+        
+        df = pd.DataFrame(cleaned)
         
         if df.empty:
             raise HTTPException(status_code=400, detail="No meter data provided")
@@ -136,6 +138,8 @@ def analyze(request: AnalyzeRequest):
             'meters': meters
         }
     
+    except HTTPException:
+        raise
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
