@@ -4,23 +4,38 @@
 
 @layer base {
   body {
-    @apply bg-dark-950 text-dark-50 antialiased selection:bg-energy-500 selection:text-white;
+    @apply bg-white text-slate-900 antialiased selection:bg-energy-200 selection:text-energy-900;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 }
 
 @layer components {
   .glass-card {
-    @apply bg-dark-900/60 backdrop-blur-md border border-dark-800 rounded-2xl shadow-xl;
+    @apply bg-white/70 backdrop-blur-xl border border-white/50 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.04)] transition-all duration-500 hover:shadow-[0_40px_80px_rgba(16,185,129,0.08)] hover:-translate-y-1;
   }
   
   .btn-primary {
-    @apply bg-energy-600 hover:bg-energy-500 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300 shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:shadow-[0_0_25px_rgba(34,197,94,0.5)];
+    @apply bg-energy-600 hover:bg-energy-500 text-white font-black py-4 px-8 rounded-2xl transition-all duration-300 shadow-xl shadow-energy-500/20 hover:shadow-energy-500/40 active:scale-95 uppercase tracking-widest text-sm;
   }
   
   .btn-outline {
-    @apply border-2 border-energy-600 text-energy-500 hover:bg-energy-600/10 font-medium py-2 px-6 rounded-lg transition-all duration-300;
+    @apply border-2 border-slate-200 text-slate-900 bg-white/50 backdrop-blur-sm font-black py-4 px-8 rounded-2xl transition-all duration-300 hover:border-energy-500 hover:text-energy-700 active:scale-95 uppercase tracking-widest text-sm shadow-sm;
   }
+
+  .energy-glow {
+    @apply relative overflow-hidden;
+  }
+
+  .energy-glow::after {
+    content: '';
+    @apply absolute -inset-full bg-gradient-to-r from-transparent via-energy-200/20 to-transparent skew-x-[-30deg] pointer-events-none;
+    animation: shine 6s infinite;
+  }
+}
+
+@keyframes shine {
+  0% { transform: translateX(-100%) skewX(-30deg); }
+  20%, 100% { transform: translateX(200%) skewX(-30deg); }
 }
 
 /* Custom scrollbar */
@@ -30,11 +45,11 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-dark-950;
+  @apply bg-white;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-dark-800 rounded-full hover:bg-dark-700 transition-colors;
+  @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
 }
 
 /* Base styles for root container */

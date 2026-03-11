@@ -46,76 +46,78 @@ export default function Dashboard() {
   const formatPercent = (val) => `${(val * 100).toFixed(1)}%`;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white flex items-center">
-          <ShieldCheck className="mr-3 h-8 w-8 text-energy-500" />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="mb-12">
+        <h1 className="text-4xl font-black text-slate-900 flex items-center tracking-tight">
+          <div className="p-3 bg-energy-100 rounded-2xl mr-4">
+            <ShieldCheck className="h-8 w-8 text-energy-600" />
+          </div>
           System Dashboard
         </h1>
-        <p className="text-dark-300 mt-2">Active intelligence monitoring system capabilities and model architecture.</p>
+        <p className="text-slate-500 mt-3 text-lg font-medium">Active intelligence monitoring system capabilities and model architecture.</p>
       </div>
 
       {modelInfo && (
-        <div className="space-y-8">
+        <div className="space-y-10">
           {/* Main metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { label: "Accuracy", value: formatPercent(modelInfo.test_accuracy), icon: Target, color: "text-blue-400" },
-              { label: "Precision", value: formatPercent(modelInfo.test_precision), icon: CheckCircle, color: "text-energy-400" },
-              { label: "Recall", value: formatPercent(modelInfo.test_recall), icon: Activity, color: "text-indigo-400" },
-              { label: "ROC AUC", value: formatPercent(modelInfo.roc_auc), icon: Activity, color: "text-purple-400" },
+              { label: "Accuracy", value: formatPercent(modelInfo.test_accuracy), icon: Target, color: "text-blue-600", bgColor: "bg-blue-50" },
+              { label: "Precision", value: formatPercent(modelInfo.test_precision), icon: CheckCircle, color: "text-energy-600", bgColor: "bg-green-50" },
+              { label: "Recall", value: formatPercent(modelInfo.test_recall), icon: Activity, color: "text-indigo-600", bgColor: "bg-indigo-50" },
+              { label: "ROC AUC", value: formatPercent(modelInfo.roc_auc), icon: Activity, color: "text-purple-600", bgColor: "bg-purple-50" },
             ].map((metric, i) => (
-              <div key={i} className="glass-card p-6 flex flex-col relative overflow-hidden group">
-                <div className="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <metric.icon className={`h-24 w-24 ${metric.color}`} />
+              <div key={i} className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col relative overflow-hidden group hover:shadow-md transition-all duration-300">
+                <div className="absolute -right-4 -top-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+                  <metric.icon className={`h-28 w-28 ${metric.color}`} />
                 </div>
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className={`p-2 rounded-lg bg-dark-800 ${metric.color}`}>
-                    <metric.icon className="h-5 w-5" />
+                <div className="flex items-center space-x-3 mb-5">
+                  <div className={`p-2.5 rounded-xl ${item.bgColor}`}>
+                    <metric.icon className={`h-6 w-6 ${metric.color}`} />
                   </div>
-                  <h3 className="text-dark-300 font-medium">{metric.label}</h3>
+                  <h3 className="text-slate-500 font-bold uppercase tracking-wider text-xs">{metric.label}</h3>
                 </div>
-                <p className="text-3xl font-bold text-white">{metric.value}</p>
+                <p className="text-4xl font-black text-slate-900">{metric.value}</p>
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
             {/* Engine Config */}
-            <div className="glass-card p-6 lg:col-span-1">
-              <h2 className="text-xl font-bold text-white mb-6 border-b border-dark-800 pb-4">Engine Configuration</h2>
-              <ul className="space-y-4">
+            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+              <h2 className="text-2xl font-black text-slate-900 mb-8 border-b border-slate-100 pb-5 tracking-tight">Engine Config</h2>
+              <ul className="space-y-6">
                 <li className="flex justify-between items-center">
-                  <span className="text-dark-300">Architecture</span>
-                  <span className="text-energy-400 font-medium">{modelInfo.best_model}</span>
+                  <span className="text-slate-500 font-bold text-sm uppercase">Architecture</span>
+                  <span className="text-energy-700 font-black bg-energy-50 px-3 py-1 rounded-lg text-sm">{modelInfo.best_model}</span>
                 </li>
                 <li className="flex justify-between items-center">
-                  <span className="text-dark-300">Feature Count</span>
-                  <span className="text-white font-medium">{modelInfo.n_features}</span>
+                  <span className="text-slate-500 font-bold text-sm uppercase">Feature Count</span>
+                  <span className="text-slate-900 font-black text-lg">{modelInfo.n_features}</span>
                 </li>
                 <li className="flex justify-between items-center">
-                  <span className="text-dark-300">Decision Threshold</span>
-                  <span className="text-white font-medium">{modelInfo.optimal_threshold}</span>
+                  <span className="text-slate-500 font-bold text-sm uppercase">Threshold</span>
+                  <span className="text-slate-900 font-black text-lg">{modelInfo.optimal_threshold}</span>
                 </li>
                 <li className="flex justify-between items-center">
-                  <span className="text-dark-300">F1 Score</span>
-                  <span className="text-white font-medium">{formatPercent(modelInfo.test_f1)}</span>
+                  <span className="text-slate-500 font-bold text-sm uppercase">F1 Score</span>
+                  <span className="text-slate-900 font-black text-lg">{formatPercent(modelInfo.test_f1)}</span>
                 </li>
               </ul>
             </div>
 
             {/* Included Features */}
-            <div className="glass-card p-6 lg:col-span-2">
-              <h2 className="text-xl font-bold text-white mb-6 border-b border-dark-800 pb-4">Analyzed Telemetry Vectors</h2>
-              <div className="flex flex-wrap gap-2">
-                {modelInfo.feature_names.slice(0, 25).map((feature, i) => (
-                  <span key={i} className="px-3 py-1 bg-dark-800 border border-dark-700 rounded-md text-xs text-dark-300 font-mono">
+            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm lg:col-span-2">
+              <h2 className="text-2xl font-black text-slate-900 mb-8 border-b border-slate-100 pb-5 tracking-tight">Analyzed Telemetry Vectors</h2>
+              <div className="flex flex-wrap gap-3">
+                {modelInfo.feature_names.slice(0, 30).map((feature, i) => (
+                  <span key={i} className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-600 font-bold tracking-tight shadow-sm">
                     {feature}
                   </span>
                 ))}
-                {modelInfo.feature_names.length > 25 && (
-                  <span className="px-3 py-1 bg-dark-800 border border-dark-700 rounded-md text-xs text-energy-500 font-mono">
-                    + {modelInfo.feature_names.length - 25} more features
+                {modelInfo.feature_names.length > 30 && (
+                  <span className="px-4 py-2 bg-energy-50 border border-energy-100 rounded-xl text-xs text-energy-700 font-black shadow-sm">
+                    + {modelInfo.feature_names.length - 30} more features
                   </span>
                 )}
               </div>
@@ -124,5 +126,6 @@ export default function Dashboard() {
         </div>
       )}
     </div>
+
   );
 }

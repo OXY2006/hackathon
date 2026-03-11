@@ -16,7 +16,7 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   return (
     <Router>
-      <div className="flex flex-col min-h-screen bg-dark-950 text-dark-50">
+      <div className="flex flex-col min-h-screen bg-slate-50 text-slate-900">
         <main className="flex-grow">
           <Routes>
             <Route path="/login" element={<LoginPage />} />
@@ -65,8 +65,11 @@ function App() {
           </Routes>
         </main>
         
-        <footer className="py-6 border-t border-dark-800 text-center text-dark-400 mt-auto">
-          <p>© {new Date().getFullYear()} AI-Driven Energy Theft Detection System. All rights reserved.</p>
+        <footer className="py-8 bg-white border-t border-slate-200 text-center text-slate-500 mt-auto">
+          <div className="max-w-7xl mx-auto px-4">
+            <p className="text-sm font-medium">© {new Date().getFullYear()} AI-Driven Energy Theft Detection System</p>
+            <p className="text-xs mt-1 text-slate-400">Ensuring energy security through advanced machine learning.</p>
+          </div>
         </footer>
       </div>
     </Router>
