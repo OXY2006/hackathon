@@ -1,9 +1,16 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Zap, LayoutDashboard, UploadCloud, BarChart3, Activity } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Zap, LayoutDashboard, UploadCloud, BarChart3, Activity, LogOut } from 'lucide-react';
 
 export default function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
   
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
   const navLinks = [
     { name: 'Home', path: '/', icon: Zap },
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -26,26 +33,36 @@ export default function Navbar() {
             </Link>
           </div>
           
-          <div className="hidden md:flex items-center space-x-1">
-            {navLinks.map((link) => {
-              const Icon = link.icon;
-              const isActive = location.pathname === link.path;
-              
-              return (
-                <Link
-                  key={link.name}
-                  to={link.path}
-                  className={`flex items-center space-x-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive 
-                      ? 'bg-dark-800 text-energy-500' 
-                      : 'text-dark-300 hover:text-white hover:bg-dark-800/50'
-                  }`}
-                >
-                  <Icon className={`h-4 w-4 ${isActive ? 'text-energy-500' : ''}`} />
-                  <span>{link.name}</span>
-                </Link>
-              );
-            })}
+          <div className="hidden md:flex items-center space-x-4">
+            <div className="flex items-center space-x-1">
+              {navLinks.map((link) => {
+                const Icon = link.icon;
+                const isActive = location.pathname === link.path;
+                
+                return (
+                  <Link
+                    key={link.name}
+                    to={link.path}
+                    className={`flex items-center space-x-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isActive 
+                        ? 'bg-dark-800 text-energy-500' 
+                        : 'text-dark-300 hover:text-white hover:bg-dark-800/50'
+                    }`}
+                  >
+                    <Icon className={`h-4 w-4 ${isActive ? 'text-energy-500' : ''}`} />
+                    <span>{link.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="flex items-center space-x-1 px-4 py-2 rounded-lg text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-400/10 transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Logout</span>
+            </button>
           </div>
           
           {/* Mobile menu button could go here */}
