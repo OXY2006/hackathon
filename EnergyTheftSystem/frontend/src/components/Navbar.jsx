@@ -28,7 +28,7 @@ export default function Navbar() {
                 <Activity className="h-6 w-6 text-white" />
               </div>
               <span className="font-black text-2xl tracking-tighter text-slate-900">
-                Energy<span className="text-energy-600">Shield</span>
+                Energy-<span className="text-energy-600">Sentinel</span>
               </span>
               <div className="absolute -top-1 -right-1 w-2 h-2 bg-energy-500 rounded-full animate-ping"></div>
             </Link>

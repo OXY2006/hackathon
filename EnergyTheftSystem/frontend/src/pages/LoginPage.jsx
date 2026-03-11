@@ -38,7 +38,7 @@ const LoginPage = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
               </svg>
             </div>
-            <span className="text-2xl font-black uppercase tracking-[0.2em]">EnergyShield</span>
+            <span className="text-2xl font-black uppercase tracking-[0.2em]">Energy-Sentinel</span>
           </div>
 
           <div className="space-y-6 max-w-lg mb-20 animate-reveal" style={{ animationDelay: '200ms' }}>
