@@ -51,7 +51,7 @@ export default function PredictionPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageInput, setPageInput] = useState('1');
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' = highest risk first, 'asc' = lowest risk first
-  const itemsPerPage = 15;
+  const itemsPerPage = 8; // fewer rows per page to reduce visual density
 
   if (!data || !data.predictions) {
     return <Navigate to="/upload" replace />;
@@ -412,7 +412,16 @@ export default function PredictionPage() {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {paginatedData.map((p, idx) => (
-                <tr key={idx} className={`hover:bg-slate-50/50 transition-colors group ${p.is_suspicious ? 'bg-red-50/30' : ''}`}>
+                <tr
+                  key={idx}
+                  className={`hover:bg-slate-50/50 transition-colors group ${
+                    p.is_suspicious
+                      ? 'bg-red-50/30'
+                      : p.confidence === 'Medium'
+                        ? 'bg-amber-50/60'
+                        : ''
+                  }`}
+                >
                   <td className="px-8 py-5 text-slate-600 font-mono text-xs font-bold">
                     {p.id || `NODE-${(p.index + 1).toString().padStart(4, '0')}`}
                   </td>
@@ -430,12 +439,26 @@ export default function PredictionPage() {
                   <td className="px-8 py-5">
                     <div className="flex items-center">
                       <div className="w-32 bg-slate-100 rounded-full h-2 mr-4 flex-shrink-0 p-[1px] border border-slate-200 shadow-inner">
-                        <div 
-                          className={`h-full rounded-full transition-all duration-700 ease-out ${p.is_suspicious ? 'bg-gradient-to-r from-red-400 to-red-600 shadow-[0_0_10px_rgba(239,68,68,0.4)]' : 'bg-gradient-to-r from-energy-400 to-energy-600'}`} 
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ease-out ${
+                            p.confidence === 'Medium'
+                              ? 'bg-gradient-to-r from-amber-300 to-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)]'
+                              : p.is_suspicious
+                                ? 'bg-gradient-to-r from-red-400 to-red-600 shadow-[0_0_10px_rgba(239,68,68,0.4)]'
+                                : 'bg-gradient-to-r from-energy-400 to-energy-600'
+                          }`}
                           style={{ width: `${p.risk_score}%` }}
                         ></div>
                       </div>
-                      <span className={`text-lg font-black tracking-tight ${p.is_suspicious ? 'text-red-700' : 'text-slate-900'}`}>
+                      <span
+                        className={`text-lg font-black tracking-tight ${
+                          p.confidence === 'Medium'
+                            ? 'text-amber-600'
+                            : p.is_suspicious
+                              ? 'text-red-700'
+                              : 'text-slate-900'
+                        }`}
+                      >
                         {p.risk_score.toFixed(1)}<span className="text-[10px] ml-0.5 opacity-50">%</span>
                       </span>
                     </div>
