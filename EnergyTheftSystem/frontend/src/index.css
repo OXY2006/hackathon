@@ -59,7 +59,132 @@
   flex-direction: column;
 }
 
-/* ── AI Investigation Modal Animations ── */
+/* ══════════════════════════════════════════════
+   GLOBAL PAGE & ELEMENT ANIMATIONS
+   ══════════════════════════════════════════════ */
+
+/* Page reveal animation */
+@keyframes pageReveal {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-page-reveal {
+  animation: pageReveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Reveal animation for sections */
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-reveal {
+  animation: reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Float animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+.animate-float {
+  animation: float 5s ease-in-out infinite;
+}
+.animate-float-slow {
+  animation: float 7s ease-in-out infinite;
+}
+
+/* Slow pulse */
+@keyframes pulseSlow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+.animate-pulse-slow {
+  animation: pulseSlow 4s ease-in-out infinite;
+}
+
+/* Gradient shift for backgrounds */
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradientShift 8s ease infinite;
+}
+
+/* Counter / number grow */
+@keyframes countUp {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-count-up {
+  animation: countUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Card hover lift */
+.card-hover {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-hover:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+/* Glow border on focus */
+@keyframes glowBorder {
+  0%, 100% { box-shadow: 0 0 8px rgba(16, 185, 129, 0.1); }
+  50% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.25); }
+}
+.glow-on-hover:hover {
+  animation: glowBorder 2s ease-in-out infinite;
+}
+
+/* Staggered list children */
+.stagger-children > * {
+  opacity: 0;
+  animation: reveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+.stagger-children > *:nth-child(7) { animation-delay: 0.35s; }
+.stagger-children > *:nth-child(8) { animation-delay: 0.4s; }
+
+/* Scan line effect for tech cards */
+@keyframes scanLine {
+  0% { top: -10%; }
+  100% { top: 110%; }
+}
+.scan-line::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 30%;
+  background: linear-gradient(180deg, transparent, rgba(16,185,129,0.03), transparent);
+  animation: scanLine 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Typing cursor blink */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.cursor-blink::after {
+  content: '|';
+  animation: blink 1s step-end infinite;
+  margin-left: 2px;
+  color: #10b981;
+}
+
+/* ══════════════════════════════════════════════
+   AI INVESTIGATION MODAL ANIMATIONS
+   ══════════════════════════════════════════════ */
+
 @keyframes modalBackdropIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -153,3 +278,84 @@
 .modal-scroll::-webkit-scrollbar-track { background: transparent; }
 .modal-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 .modal-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ══════════════════════════════════════════════
+   UPLOAD PAGE ANIMATIONS
+   ══════════════════════════════════════════════ */
+
+@keyframes dropzonePulse {
+  0%, 100% { border-color: rgba(16, 185, 129, 0.3); box-shadow: 0 0 0 rgba(16, 185, 129, 0); }
+  50% { border-color: rgba(16, 185, 129, 0.6); box-shadow: 0 0 30px rgba(16, 185, 129, 0.06); }
+}
+.dropzone-active {
+  animation: dropzonePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes uploadBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.upload-icon-float {
+  animation: uploadBounce 3s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════════════
+   DASHBOARD METRIC ANIMATIONS
+   ══════════════════════════════════════════════ */
+
+@keyframes metricSlideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.metric-animate {
+  animation: metricSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.metric-animate:nth-child(1) { animation-delay: 0.1s; }
+.metric-animate:nth-child(2) { animation-delay: 0.2s; }
+.metric-animate:nth-child(3) { animation-delay: 0.3s; }
+.metric-animate:nth-child(4) { animation-delay: 0.4s; }
+
+/* Tag wobble on hover */
+@keyframes tagWobble {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-2deg); }
+  75% { transform: rotate(2deg); }
+}
+.tag-hover:hover {
+  animation: tagWobble 0.3s ease-in-out;
+}
+
+/* ══════════════════════════════════════════════
+   LOGIN PAGE PARTICLE EFFECT
+   ══════════════════════════════════════════════ */
+
+@keyframes particleFloat {
+  0%, 100% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.5; }
+  25% { transform: translateY(-20px) translateX(10px) rotate(90deg); opacity: 0.8; }
+  50% { transform: translateY(-40px) translateX(-5px) rotate(180deg); opacity: 0.3; }
+  75% { transform: translateY(-20px) translateX(15px) rotate(270deg); opacity: 0.6; }
+}
+.particle {
+  animation: particleFloat 8s ease-in-out infinite;
+}
+
+/* Input focus glow */
+@keyframes inputGlow {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.08); }
+  50% { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15); }
+}
+.input-glow:focus {
+  animation: inputGlow 2s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════════════
+   PERFORMANCE PAGE
+   ══════════════════════════════════════════════ */
+
+@keyframes imageReveal {
+  from { opacity: 0; transform: scale(0.95); filter: blur(4px); }
+  to { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+.img-reveal {
+  animation: imageReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
