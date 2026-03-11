@@ -95,7 +95,7 @@ export default function ModelPerformance() {
             <div className="bg-white rounded-[2rem] border border-slate-200 shadow-lg overflow-hidden group hover:shadow-2xl transition-all duration-500 card-hover relative">
               {/* Gradient accent strip */}
               <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${section.accentColor}`}></div>
-              
+
               <div className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 px-8 py-5 flex justify-between items-center">
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{section.barTitle}</h3>
                 <div className="flex space-x-2">
@@ -105,7 +105,7 @@ export default function ModelPerformance() {
                 </div>
               </div>
               <div className="p-10 flex justify-center bg-white">
-                <img 
+                <img
                   src={section.src}
                   alt={section.alt}
                   className="img-reveal max-w-full h-auto rounded-2xl shadow-sm border border-slate-100 max-h-[600px] object-contain group-hover:scale-[1.01] transition-transform duration-500"

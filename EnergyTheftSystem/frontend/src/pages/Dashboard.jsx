@@ -46,7 +46,7 @@ export default function Dashboard() {
         const { results, filename } = JSON.parse(stored);
         if (results?.summary) setLastAnalysis({ ...results.summary, filename });
       }
-    } catch {}
+    } catch { }
   }, []);
 
   if (loading) {

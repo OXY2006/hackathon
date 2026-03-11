@@ -52,37 +52,33 @@ export default function Sidebar() {
       >
         <div className="relative w-5 h-5">
           <Menu
-            className={`absolute inset-0 h-5 w-5 text-slate-700 dark:text-slate-200 transition-all duration-300 ${
-              isOpen ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'
-            }`}
+            className={`absolute inset-0 h-5 w-5 text-slate-700 dark:text-slate-200 transition-all duration-300 ${isOpen ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'
+              }`}
           />
           <X
-            className={`absolute inset-0 h-5 w-5 text-slate-700 dark:text-slate-200 transition-all duration-300 ${
-              isOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'
-            }`}
+            className={`absolute inset-0 h-5 w-5 text-slate-700 dark:text-slate-200 transition-all duration-300 ${isOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'
+              }`}
           />
         </div>
       </button>
 
       {/* Overlay */}
       <div
-        className={`fixed inset-0 bg-slate-900/25 backdrop-blur-[3px] z-[50] transition-opacity duration-400 ${
-          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
+        className={`fixed inset-0 bg-slate-900/25 backdrop-blur-[3px] z-[50] transition-opacity duration-400 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
         onClick={() => setIsOpen(false)}
       />
 
       {/* Sidebar Panel */}
       <div
         ref={sidebarRef}
-        className={`fixed top-0 left-0 h-full w-72 z-[55] transform transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed top-0 left-0 h-full w-72 z-[55] transform transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${isOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         <div className="h-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border-r border-slate-200/60 dark:border-slate-800/60 shadow-2xl shadow-slate-900/10 flex flex-col relative overflow-hidden transition-colors duration-300">
           {/* Decorative gradient */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-energy-100/30 dark:from-energy-900/20 to-transparent rounded-bl-full pointer-events-none"></div>
-          
+
           {/* Brand Header */}
           <div className="px-6 pt-20 pb-6 border-b border-slate-100 dark:border-slate-800">
             <Link to="/" className="flex items-center space-x-3 group">
@@ -114,19 +110,17 @@ export default function Sidebar() {
                   <Link
                     key={link.name}
                     to={link.path}
-                    className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 group ${
-                      isActive
+                    className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 group ${isActive
                         ? 'bg-gradient-to-r from-energy-50 to-energy-100/50 dark:from-energy-900/20 dark:to-energy-800/10 text-energy-700 dark:text-energy-400 shadow-sm shadow-energy-500/5 border border-energy-100/50 dark:border-energy-800/30'
                         : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                    }`}
+                      }`}
                     style={{ animationDelay: `${i * 50}ms` }}
                   >
                     <div className="flex items-center space-x-3">
-                      <div className={`p-1.5 rounded-lg transition-all duration-300 ${
-                        isActive
+                      <div className={`p-1.5 rounded-lg transition-all duration-300 ${isActive
                           ? 'bg-gradient-to-br from-energy-500 to-emerald-600 shadow-md shadow-energy-500/30'
                           : 'bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-200 dark:group-hover:bg-slate-700 group-hover:scale-110'
-                      }`}>
+                        }`}>
                         <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300'} transition-colors`} />
                       </div>
                       <span>{link.name}</span>

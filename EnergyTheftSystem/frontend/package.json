@@ -12,6 +12,8 @@
   "dependencies": {
     "autoprefixer": "^10.4.27",
     "axios": "^1.13.6",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.577.0",
     "postcss": "^8.5.8",
