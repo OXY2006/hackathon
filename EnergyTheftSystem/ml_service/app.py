@@ -1,10 +1,28 @@
 import os
 import json
 import joblib
+import random
+import math
 import pandas as pd
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import io
+
+# --- Simulated coordinate generation around Hyderabad, India ---
+HYDERABAD_CENTER = (17.385, 78.4867)
+COORD_SPREAD = 0.08  # ~8-9 km spread
+
+def generate_simulated_coords(n, seed=42):
+    """Generate n simulated lat/lng pairs scattered around Hyderabad."""
+    rng = random.Random(seed)
+    coords = []
+    for i in range(n):
+        angle = rng.uniform(0, 2 * math.pi)
+        radius = rng.uniform(0.005, COORD_SPREAD)
+        lat = HYDERABAD_CENTER[0] + radius * math.sin(angle)
+        lng = HYDERABAD_CENTER[1] + radius * math.cos(angle)
+        coords.append((round(lat, 6), round(lng, 6)))
+    return coords
 
 app = FastAPI(title="Energy Theft Detection Service")
 
@@ -171,9 +189,45 @@ async def predict(file: UploadFile = File(...)):
             if col_match:
                 id_col = col_match[0]
                 break
-                
-        # Drop ID so we don't compute statistics over the ID
-        df_for_features = df_raw.drop(columns=[id_col]) if id_col else df_raw
+
+        # Detect coordinate columns (latitude / longitude) if provided in the dataset
+        lat_col = None
+        lng_col = None
+        for col in ['latitude', 'lat', 'lat_deg']:
+            col_match = [c for c in df_raw.columns if c.lower() == col.lower()]
+            if col_match:
+                lat_col = col_match[0]
+                break
+
+        for col in ['longitude', 'lon', 'lng', 'long', 'lon_deg']:
+            col_match = [c for c in df_raw.columns if c.lower() == col.lower()]
+            if col_match:
+                lng_col = col_match[0]
+                break
+
+        # Preserve original coordinates (if present) for map visualization
+        coords_from_data = None
+        if lat_col and lng_col:
+            try:
+                coords_from_data = list(
+                    zip(
+                        pd.to_numeric(df_raw[lat_col], errors='coerce'),
+                        pd.to_numeric(df_raw[lng_col], errors='coerce')
+                    )
+                )
+            except Exception:
+                coords_from_data = None
+
+        # Drop ID and coordinate columns so we don't compute statistics over them
+        drop_cols = []
+        if id_col:
+            drop_cols.append(id_col)
+        if lat_col:
+            drop_cols.append(lat_col)
+        if lng_col:
+            drop_cols.append(lng_col)
+
+        df_for_features = df_raw.drop(columns=drop_cols) if drop_cols else df_raw
         
         # ENGINEER FEATURES dynamically
         features_df = engineer_features(df_for_features)
@@ -206,6 +260,15 @@ async def predict(file: UploadFile = File(...)):
         # Create predictions array
         predictions = (probabilities >= threshold).astype(int)
         
+        # Choose coordinates: use real latitude/longitude from the dataset when available,
+        # otherwise fall back to simulated coordinates around Hyderabad.
+        has_real_coordinates = False
+        if coords_from_data and len(coords_from_data) == len(predictions):
+            coords = coords_from_data
+            has_real_coordinates = True
+        else:
+            coords = generate_simulated_coords(len(predictions))
+        
         results = []
         for i in range(len(predictions)):
             is_suspicious = bool(predictions[i])
@@ -218,7 +281,9 @@ async def predict(file: UploadFile = File(...)):
                 "status": "Suspicious / Possible Theft" if is_suspicious else "Normal Consumption",
                 "probability": float(probabilities[i]),
                 "risk_score": round(risk_score, 2),
-                "confidence": "High" if abs(float(probabilities[i]) - threshold) > 0.2 else "Medium"
+                "confidence": "High" if abs(float(probabilities[i]) - threshold) > 0.2 else "Medium",
+                "latitude": coords[i][0],
+                "longitude": coords[i][1]
             }
             
             if id_col:
@@ -234,7 +299,8 @@ async def predict(file: UploadFile = File(...)):
             "total_records": total,
             "suspicious_cases": suspicious_count,
             "normal_cases": total - suspicious_count,
-            "theft_percentage": round((suspicious_count / total) * 100, 2) if total > 0 else 0
+            "theft_percentage": round((suspicious_count / total) * 100, 2) if total > 0 else 0,
+            "has_real_coordinates": has_real_coordinates,
         }
             
         return {"summary": summary, "predictions": results}

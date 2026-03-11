@@ -68,9 +68,17 @@ export default function UploadPage() {
           'Content-Type': 'multipart/form-data',
         },
       });
-      
-      // Navigate to prediction page with the data
-      navigate('/prediction', { state: { results: response.data, filename: file.name } });
+
+      // Persist latest results so Map/Prediction pages can restore even after navigation or refresh
+      const payload = { results: response.data, filename: file.name };
+      try {
+        sessionStorage.setItem('latestResults', JSON.stringify(payload));
+      } catch (storageErr) {
+        console.warn('Unable to persist latest results to sessionStorage:', storageErr);
+      }
+
+      // Navigate to prediction page where metrics and map are shown together
+      navigate('/prediction', { state: payload });
     } catch (err) {
       console.error('Upload error:', err);
       setError(err.response?.data?.detail || err.response?.data?.error || 'Failed to process file. Ensure backend and ML services are running.');

@@ -1,14 +1,56 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useLocation, Navigate, Link } from 'react-router-dom';
-import { AlertTriangle, CheckCircle, ArrowLeft, ShieldAlert, BadgeCheck, BarChart2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AlertTriangle, CheckCircle, ArrowLeft, ShieldAlert, BadgeCheck, BarChart2, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
+
+// Auto-fit bounds to all markers
+function FitBounds({ bounds }) {
+  const map = useMap();
+  useEffect(() => {
+    if (bounds && bounds.length > 0) {
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+    }
+  }, [map, bounds]);
+  return null;
+}
+
+// Color mapping based on risk score
+function getMarkerColor(riskScore, isSuspicious) {
+  if (!isSuspicious) return '#10b981'; // green
+  if (riskScore >= 80) return '#dc2626';  // dark red
+  if (riskScore >= 60) return '#ef4444';  // red
+  if (riskScore >= 40) return '#f97316';  // orange
+  return '#eab308'; // yellow-ish for borderline
+}
+
+function getMarkerRadius(riskScore) {
+  return Math.max(6, Math.min(18, 6 + (riskScore / 100) * 12));
+}
 
 export default function PredictionPage() {
   const location = useLocation();
-  const data = location.state?.results;
-  const filename = location.state?.filename;
+
+  // Prefer router state, but fall back to sessionStorage so refresh / direct nav still works
+  let data = location.state?.results;
+  let filename = location.state?.filename;
+
+  if (!data || !data.predictions) {
+    const stored = sessionStorage.getItem('latestResults');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        data = parsed.results;
+        filename = parsed.filename;
+      } catch (e) {
+        console.warn('Failed to parse latestResults from sessionStorage', e);
+      }
+    }
+  }
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageInput, setPageInput] = useState('1');
+  const [sortOrder, setSortOrder] = useState('desc'); // 'desc' = highest risk first, 'asc' = lowest risk first
   const itemsPerPage = 15;
 
   if (!data || !data.predictions) {
@@ -16,11 +58,30 @@ export default function PredictionPage() {
   }
 
   const { summary, predictions } = data;
+  const hasRealCoordinates = Boolean(summary?.has_real_coordinates);
 
-  // Sort predictions by risk score descending so highest risk is first
+  // Precompute mappable points and their bounds for Leaflet to avoid recomputing on every render
+  const mappablePoints = useMemo(
+    () => predictions.filter(p => p.latitude != null && p.longitude != null),
+    [predictions]
+  );
+
+  const mapBounds = useMemo(
+    () => mappablePoints.map(p => [p.latitude, p.longitude]),
+    [mappablePoints]
+  );
+
+  // Sort predictions by risk score based on selected sort order
   const sortedPredictions = useMemo(() => {
-    return [...predictions].sort((a, b) => b.risk_score - a.risk_score);
-  }, [predictions]);
+    const copy = [...predictions];
+    copy.sort((a, b) => {
+      if (sortOrder === 'asc') {
+        return a.risk_score - b.risk_score;
+      }
+      return b.risk_score - a.risk_score;
+    });
+    return copy;
+  }, [predictions, sortOrder]);
 
   // Calculate histogram data
   const chartData = useMemo(() => {
@@ -40,9 +101,19 @@ export default function PredictionPage() {
 
   // General Pagination
   const totalPages = Math.ceil(sortedPredictions.length / itemsPerPage);
-  const paginatedData = sortedPredictions.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+
+  // Keep the input field in sync when currentPage changes programmatically
+  useEffect(() => {
+    setPageInput(String(currentPage || 1));
+  }, [currentPage]);
+
+  const paginatedData = useMemo(
+    () =>
+      sortedPredictions.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+      ),
+    [sortedPredictions, currentPage, itemsPerPage]
   );
 
   const CustomTooltip = ({ active, payload, label }) => {
@@ -147,19 +218,157 @@ export default function PredictionPage() {
         </div>
       </div>
 
+      {/* Geospatial Anomaly Map (only when real latitude/longitude is present in the dataset) */}
+      {hasRealCoordinates && (
+      <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm mb-12">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6 gap-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-3 bg-indigo-50 rounded-2xl">
+              <MapPin className="h-6 w-6 text-indigo-600" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Anomaly Map</h2>
+              <p className="text-slate-500 text-sm font-medium">
+                Each node is plotted on a simulated grid around Hyderabad – color and size indicate theft risk.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap text-xs font-bold uppercase tracking-widest text-slate-500">
+            <span className="flex items-center">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+              Normal
+            </span>
+            <span className="flex items-center">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 mr-2 shadow-[0_0_8px_rgba(239,68,68,0.4)]" />
+              Suspicious
+            </span>
+            <span className="flex items-center">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 mr-2 shadow-[0_0_8px_rgba(251,191,36,0.4)]" />
+              Borderline
+            </span>
+          </div>
+        </div>
+
+        {mappablePoints.length > 0 && (
+          <div className="relative">
+            <div style={{ height: '60vh', width: '100%' }}>
+              <MapContainer
+                center={[17.385, 78.4867]}
+                zoom={12}
+                style={{ height: '100%', width: '100%' }}
+                scrollWheelZoom={true}
+                preferCanvas={true}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+
+                <FitBounds bounds={mapBounds} />
+
+                {mappablePoints.map((p, idx) => {
+                    const color = getMarkerColor(p.risk_score, p.is_suspicious);
+                    const radius = getMarkerRadius(p.risk_score);
+                    return (
+                      <CircleMarker
+                        key={idx}
+                        center={[p.latitude, p.longitude]}
+                        radius={radius}
+                        pathOptions={{
+                          color,
+                          fillColor: color,
+                          fillOpacity: 0.6,
+                          weight: 2,
+                          opacity: 0.9,
+                        }}
+                      >
+                        <Popup>
+                          <div className="min-w-[200px] p-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-black text-slate-900 text-sm">
+                                {p.id || `NODE-${(p.index + 1).toString().padStart(4, '0')}`}
+                              </span>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                p.is_suspicious
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-green-100 text-green-700'
+                              }`}>
+                                {p.is_suspicious ? '⚠ Suspicious' : '✓ Normal'}
+                              </span>
+                            </div>
+                            <div className="space-y-1.5 text-xs">
+                              <div className="flex justify-between">
+                                <span className="text-slate-500 font-semibold">Risk Score</span>
+                                <span className={`font-black ${p.is_suspicious ? 'text-red-600' : 'text-green-600'}`}>
+                                  {p.risk_score.toFixed(1)}%
+                                </span>
+                              </div>
+                              <div className="w-full bg-slate-100 rounded-full h-1.5">
+                                <div
+                                  className="h-full rounded-full transition-all"
+                                  style={{ width: `${p.risk_score}%`, backgroundColor: color }}
+                                />
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-slate-500 font-semibold">Confidence</span>
+                                <span className="font-bold text-slate-700">{p.confidence}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-slate-500 font-semibold">Coordinates</span>
+                                <span className="font-mono text-slate-600 text-[10px]">
+                                  {p.latitude.toFixed(4)}, {p.longitude.toFixed(4)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </Popup>
+                      </CircleMarker>
+                    );
+                  })}
+              </MapContainer>
+            </div>
+          </div>
+        )}
+      </div>
+      )}
+
       {/* Detailed Analysis Table */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden">
         <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center gap-6">
           <h2 className="text-2xl font-black text-slate-900 flex items-center tracking-tight">
             Detailed Node Analysis 
-            <span className="ml-4 text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-white text-slate-400 rounded-full border border-slate-200 shadow-sm">Sorted by Risk</span>
+            <span className="ml-4 text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-white text-slate-400 rounded-full border border-slate-200 shadow-sm">
+              Sorted by Risk ({sortOrder === 'desc' ? 'High → Low' : 'Low → High'})
+            </span>
           </h2>
           
           {/* Pagination Controls */}
           <div className="flex items-center space-x-3 text-sm font-bold">
-            <span className="text-slate-400 mr-4">
-              Page <span className="text-slate-900 font-black">{currentPage}</span> of <span className="text-slate-900 font-black">{totalPages}</span>
-            </span>
+            <div className="flex items-center mr-4 space-x-2 text-slate-400">
+              <span>Page</span>
+              <input
+                type="number"
+                min={1}
+                max={totalPages}
+                value={pageInput}
+                onChange={(e) => {
+                  setPageInput(e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const raw = Number(pageInput);
+                    if (Number.isNaN(raw)) return;
+                    const clamped = Math.min(Math.max(1, raw), totalPages || 1);
+                    setCurrentPage(clamped);
+                  }
+                }}
+                className="w-14 px-2 py-1 text-center text-slate-900 font-black bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-energy-400 focus:border-energy-400"
+              />
+              <span className="text-slate-400">
+                of <span className="text-slate-900 font-black">{totalPages}</span>
+              </span>
+            </div>
             <div className="flex items-center p-1 bg-white border border-slate-100 rounded-2xl shadow-sm">
               <button 
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
@@ -186,7 +395,18 @@ export default function PredictionPage() {
               <tr>
                 <th className="px-8 py-5">Record ID</th>
                 <th className="px-8 py-5">Status classification</th>
-                <th className="px-8 py-5 w-1/3">Risk Score Index</th>
+                <th className="px-8 py-5 w-1/3">
+                  <div className="flex items-center justify-between">
+                    <span>Risk Score Index</span>
+                    <button
+                      type="button"
+                      onClick={() => setSortOrder(prev => (prev === 'desc' ? 'asc' : 'desc'))}
+                      className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
+                    >
+                      {sortOrder === 'desc' ? 'High → Low' : 'Low → High'}
+                    </button>
+                  </div>
+                </th>
                 <th className="px-8 py-5 text-right">Model Confidence</th>
               </tr>
             </thead>
