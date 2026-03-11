@@ -69,7 +69,7 @@ export default function LandingPage() {
                   <Globe className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-black text-slate-900">99.4%</p>
+                  <p className="text-sm font-black text-slate-900">90.66%</p>
                   <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest">Accuracy</p>
                 </div>
               </div>
@@ -134,7 +134,7 @@ export default function LandingPage() {
           </div>
           <h2 className="text-5xl font-black text-slate-900 tracking-tighter animate-reveal" style={{ animationDelay: '100ms' }}>Conservation Engine</h2>
           <p className="mt-6 text-slate-500 max-w-2xl mx-auto text-xl font-medium animate-reveal" style={{ animationDelay: '200ms' }}>
-            Our triple-layer intelligence protocol identifies leaks with 99.4% accuracy.
+            Our triple-layer intelligence protocol identifies leaks with 90.66% accuracy.
           </p>
         </div>
 

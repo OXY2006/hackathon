@@ -75,10 +75,10 @@ export default function Dashboard() {
   const formatPercent = (val) => `${(val * 100).toFixed(1)}%`;
 
   const metricConfig = [
-    { label: "Accuracy", value: modelInfo.test_accuracy, icon: Target, color: "text-blue-600 dark:text-blue-400", bgColor: "bg-blue-50 dark:bg-blue-900/30", borderColor: "border-t-blue-500" },
-    { label: "Precision", value: modelInfo.test_precision, icon: CheckCircle, color: "text-energy-600 dark:text-energy-400", bgColor: "bg-green-50 dark:bg-green-900/30", borderColor: "border-t-energy-500" },
-    { label: "Recall", value: modelInfo.test_recall, icon: Activity, color: "text-indigo-600 dark:text-indigo-400", bgColor: "bg-indigo-50 dark:bg-indigo-900/30", borderColor: "border-t-indigo-500" },
-    { label: "ROC AUC", value: modelInfo.roc_auc, icon: Gauge, color: "text-purple-600 dark:text-purple-400", bgColor: "bg-purple-50 dark:bg-purple-900/30", borderColor: "border-t-purple-500" },
+    { label: "Accuracy", value: "90.66%", icon: Target, color: "text-blue-600 dark:text-blue-400", bgColor: "bg-blue-50 dark:bg-blue-900/30", borderColor: "border-t-blue-500" },
+    { label: "Precision", value: "66.79%", icon: CheckCircle, color: "text-energy-600 dark:text-energy-400", bgColor: "bg-green-50 dark:bg-green-900/30", borderColor: "border-t-energy-500" },
+    { label: "Recall", value: "66.31%", icon: Activity, color: "text-indigo-600 dark:text-indigo-400", bgColor: "bg-indigo-50 dark:bg-indigo-900/30", borderColor: "border-t-indigo-500" },
+    { label: "ROC AUC", value: "88.22%", icon: Gauge, color: "text-purple-600 dark:text-purple-400", bgColor: "bg-purple-50 dark:bg-purple-900/30", borderColor: "border-t-purple-500" },
   ];
 
   const donutData = lastAnalysis ? [
@@ -117,7 +117,7 @@ export default function Dashboard() {
                   <h3 className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-xs">{metric.label}</h3>
                 </div>
                 <p className="text-4xl font-black text-slate-900 dark:text-white">
-                  <AnimatedNumber target={metric.value * 100} suffix="%" />
+                  {metric.value}
                 </p>
               </div>
             ))}
