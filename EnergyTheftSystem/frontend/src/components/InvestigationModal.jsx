@@ -13,8 +13,9 @@ export default function InvestigationModal({ meter, allMeters, onClose }) {
         setLoading(true);
         setError(null);
         
+        const investigationId = meter.id || meter.meter_id || `NODE-${meter.index}`;
         const response = await axios.post(
-          `http://localhost:5000/investigate/${meter.meter_id}`,
+          `http://localhost:5000/investigate/${investigationId}`,
           { meter, all_meters: allMeters || [] }
         );
         
@@ -41,7 +42,7 @@ export default function InvestigationModal({ meter, allMeters, onClose }) {
     return 'text-green-600 bg-green-50 border-green-200';
   };
 
-  const riskScore = (meter.prediction?.theft_probability || 0) * 100;
+  const riskScore = meter.risk_score || (meter.prediction?.theft_probability || 0) * 100;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">

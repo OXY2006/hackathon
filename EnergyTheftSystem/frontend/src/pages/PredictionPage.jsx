@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useLocation, Navigate, Link } from 'react-router-dom';
-import { AlertTriangle, CheckCircle, ArrowLeft, ShieldAlert, BadgeCheck, BarChart2, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
+import { AlertTriangle, CheckCircle, ArrowLeft, ShieldAlert, BadgeCheck, BarChart2, ChevronLeft, ChevronRight, MapPin, Eye } from 'lucide-react';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
+import InvestigationModal from '../components/InvestigationModal';
 
 // Auto-fit bounds to all markers
 function FitBounds({ bounds }) {
@@ -30,6 +31,7 @@ function getMarkerRadius(riskScore) {
 
 export default function PredictionPage() {
   const location = useLocation();
+  const [investigatingMeter, setInvestigatingMeter] = useState(null);
 
   // Prefer router state, but fall back to sessionStorage so refresh / direct nav still works
   let data = location.state?.results;
@@ -408,6 +410,7 @@ export default function PredictionPage() {
                   </div>
                 </th>
                 <th className="px-8 py-5 text-right">Model Confidence</th>
+                <th className="px-8 py-5 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -445,6 +448,15 @@ export default function PredictionPage() {
                       {p.confidence}
                     </span>
                   </td>
+                  <td className="px-8 py-5 text-right">
+                      <button
+                        onClick={() => setInvestigatingMeter(p)}
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        Investigate AI
+                      </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -456,6 +468,15 @@ export default function PredictionPage() {
           </div>
         )}
       </div>
+
+      {/* Investigation Modal */}
+      {investigatingMeter && (
+        <InvestigationModal
+          meter={investigatingMeter}
+          allMeters={predictions}
+          onClose={() => setInvestigatingMeter(null)}
+        />
+      )}
     </div>
 
   );
