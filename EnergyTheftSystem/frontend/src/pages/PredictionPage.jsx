@@ -254,13 +254,17 @@ export default function PredictionPage() {
         {mappablePoints.length > 0 && (
           <div className="relative">
             <div style={{ height: '60vh', width: '100%' }}>
-              <MapContainer
-                center={[17.385, 78.4867]}
-                zoom={12}
-                style={{ height: '100%', width: '100%' }}
-                scrollWheelZoom={true}
-                preferCanvas={true}
-              >
+                <MapContainer
+                  center={[17.385, 78.4867]}
+                  zoom={12}
+                  style={{ height: '100%', width: '100%' }}
+                  scrollWheelZoom={true}
+                  preferCanvas={true}
+                  zoomSnap={0.25}
+                  zoomDelta={0.5}
+                  wheelDebounceTime={40}
+                  wheelPxPerZoomLevel={80}
+                >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -412,8 +416,27 @@ export default function PredictionPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {paginatedData.map((p, idx) => (
-                <React.Fragment key={idx}>
+              {paginatedData.map((p, idx) => {
+                const isMediumConfidence = p.confidence === 'Medium';
+                const riskBarClasses = isMediumConfidence
+                  ? 'bg-gradient-to-r from-orange-400 to-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.4)]'
+                  : p.is_suspicious
+                    ? 'bg-gradient-to-r from-red-400 to-red-600 shadow-[0_0_10px_rgba(239,68,68,0.4)]'
+                    : 'bg-gradient-to-r from-energy-400 to-energy-600';
+                const riskTextColor = isMediumConfidence
+                  ? 'text-orange-600'
+                  : p.is_suspicious
+                    ? 'text-red-700'
+                    : 'text-slate-900';
+                const confidenceClass =
+                  p.confidence === 'High'
+                    ? 'bg-slate-900 text-white shadow-md'
+                    : p.confidence === 'Medium'
+                      ? 'bg-orange-100 text-orange-700'
+                      : 'bg-slate-100 text-slate-500';
+
+                return (
+                  <React.Fragment key={idx}>
                 <tr className={`hover:bg-slate-50/50 transition-colors group ${p.is_suspicious ? 'bg-red-50/30' : ''}`}>
                   <td className="px-8 py-5 text-slate-600 font-mono text-xs font-bold">
                     {p.id || `NODE-${(p.index + 1).toString().padStart(4, '0')}`}
@@ -442,17 +465,17 @@ export default function PredictionPage() {
                     <div className="flex items-center">
                       <div className="w-32 bg-slate-100 rounded-full h-2 mr-4 flex-shrink-0 p-[1px] border border-slate-200 shadow-inner">
                         <div 
-                          className={`h-full rounded-full transition-all duration-700 ease-out ${p.is_suspicious ? 'bg-gradient-to-r from-red-400 to-red-600 shadow-[0_0_10px_rgba(239,68,68,0.4)]' : 'bg-gradient-to-r from-energy-400 to-energy-600'}`} 
+                          className={`h-full rounded-full transition-all duration-700 ease-out ${riskBarClasses}`} 
                           style={{ width: `${p.risk_score}%` }}
                         ></div>
                       </div>
-                      <span className={`text-lg font-black tracking-tight ${p.is_suspicious ? 'text-red-700' : 'text-slate-900'}`}>
+                      <span className={`text-lg font-black tracking-tight ${riskTextColor}`}>
                         {p.risk_score.toFixed(1)}<span className="text-[10px] ml-0.5 opacity-50">%</span>
                       </span>
                     </div>
                   </td>
                   <td className="px-8 py-5 text-right">
-                    <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-lg ${p.confidence === 'High' ? 'bg-slate-900 text-white shadow-md' : 'bg-slate-100 text-slate-500'}`}>
+                    <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-lg ${confidenceClass}`}>
                       {p.confidence}
                     </span>
                   </td>
@@ -495,7 +518,8 @@ export default function PredictionPage() {
                   </tr>
                 )}
                 </React.Fragment>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

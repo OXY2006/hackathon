@@ -158,6 +158,11 @@ export default function AnomalyMapPage() {
                   zoom={12}
                   style={{ height: '100%', width: '100%' }}
                   scrollWheelZoom={true}
+                  preferCanvas={true}
+                  zoomSnap={0.25}
+                  zoomDelta={0.5}
+                  wheelDebounceTime={40}
+                  wheelPxPerZoomLevel={80}
                 >
                   <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
