@@ -1,8 +1,73 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLocation, Navigate, Link } from 'react-router-dom';
-import { AlertTriangle, CheckCircle, ArrowLeft, ShieldAlert, BadgeCheck, BarChart2, ChevronLeft, ChevronRight, MapPin, Lightbulb } from 'lucide-react';
+import { AlertTriangle, CheckCircle, ArrowLeft, ShieldAlert, BadgeCheck, BarChart2, ChevronLeft, ChevronRight, MapPin, Lightbulb, Eye, FileText, ClipboardList } from 'lucide-react';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
+
+function generateAIExplanation(node) {
+  if (!node || !node.top_features || node.top_features.length === 0) {
+    return {
+      primaryHypothesis: "Insufficient telemetry data to form a definitive hypothesis.",
+      supportingEvidence: []
+    };
+  }
+
+  const topFeature = node.top_features[0].feature.toLowerCase();
+  let primaryHypothesis = "";
+  if (topFeature.includes("variance") || topFeature.includes("std")) {
+    primaryHypothesis = "The consumer is likely employing a **manual bypass or \"jumper\" mechanism** used in conjunction with a **shunting device**, allowing them to selectively divert heavy loads around the meter during peak usage hours while maintaining a minimal \"baseline\" presence to avoid detection.";
+  } else if (topFeature.includes("zero") || topFeature.includes("min")) {
+    primaryHypothesis = "The meter is experiencing periodic complete isolation from the circuit. This is characteristic of a **remote-controlled relay or physical bridge** that completely halts metered consumption during certain periods.";
+  } else if (topFeature.includes("max") || topFeature.includes("peak")) {
+    primaryHypothesis = "The analysis indicates unusually high peak draws that do not correlate with historical usage profiles or similar consumers, suggesting an unmetered high-draw appliance may be connected via a **partial bypass**.";
+  } else {
+    primaryHypothesis = "Anomalous telemetry patterns have been detected that deviate significantly from expected baselines. This combination of factors strongly suggests sophisticated tampering to obscure actual consumption.";
+  }
+
+  const supportingEvidence = node.top_features.map(tf => {
+    let explanation = "";
+    const featureNameLower = tf.feature.toLowerCase();
+    
+    if (featureNameLower.includes("variance") || featureNameLower.includes("std")) {
+      explanation = `The extreme volatility in usage suggests that loads are not being naturally cycled, but rather "switched" between metered and unmetered states. This is characteristic of a consumer manually engaging a bypass when high-draw appliances (HVAC, machinery) are active.`;
+    } else if (featureNameLower.includes("zero") || featureNameLower.includes("min")) {
+      explanation = `These streaks indicate periods where the meter is completely isolated from the circuit. Unlike a vacant property, these streaks appear to be interspersed with high-variance activity, pointing toward a "stop-start" tampering method such as a remote-controlled relay or physical bridge.`;
+    } else if (featureNameLower.includes("max") || featureNameLower.includes("peak")) {
+      explanation = `Unusually high maximum draws indicate anomalous spikes that trigger risk thresholds. These sudden surges often point to an external, unmetered heavy load.`;
+    } else {
+      explanation = `This specific metric deviates significantly from the expected baseline, contributing highly to the comprehensive anomaly model.`;
+    }
+
+    return {
+      title: tf.feature,
+      value: tf.original_value.toFixed(3),
+      impact: tf.shap_value.toFixed(3),
+      explanation: explanation
+    };
+  });
+
+  // Generate recommended actions based on the dominant anomaly type
+  const recommendedActions = [];
+  const allFeaturesLower = node.top_features.map(tf => tf.feature.toLowerCase()).join(' ');
+
+  if (allFeaturesLower.includes('variance') || allFeaturesLower.includes('std')) {
+    recommendedActions.push('Dispatch a field inspection team to physically examine the meter and wiring for bypass devices or jumper cables.');
+    recommendedActions.push('Compare current consumption patterns with historical usage for the same billing period over the past 2–3 years.');
+  }
+  if (allFeaturesLower.includes('zero') || allFeaturesLower.includes('min')) {
+    recommendedActions.push('Inspect the meter seal and casing for evidence of tampering, relay installations, or physical bridges.');
+    recommendedActions.push('Cross-reference zero-consumption windows with smart-meter heartbeat logs to confirm the meter was powered on during those intervals.');
+  }
+  if (allFeaturesLower.includes('max') || allFeaturesLower.includes('peak')) {
+    recommendedActions.push('Audit the consumer\'s connected load declaration against the observed peak draw to identify undeclared high-draw appliances.');
+    recommendedActions.push('Install a secondary revenue-grade CT meter in parallel for a 30-day audit comparison.');
+  }
+  // Always include these general actions
+  recommendedActions.push('Flag this account for the next billing audit cycle and escalate to the revenue protection unit.');
+  recommendedActions.push('If tampering is confirmed, calculate the estimated unbilled units and initiate a recovery assessment.');
+
+  return { primaryHypothesis, supportingEvidence, recommendedActions };
+}
 
 // Auto-fit bounds to all markers
 function FitBounds({ bounds }) {
@@ -51,7 +116,7 @@ export default function PredictionPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageInput, setPageInput] = useState('1');
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' = highest risk first, 'asc' = lowest risk first
-  const [expandedNode, setExpandedNode] = useState(null);
+  const [investigatingNode, setInvestigatingNode] = useState(null);
   const itemsPerPage = 15;
 
   if (!data || !data.predictions) {
@@ -413,6 +478,7 @@ export default function PredictionPage() {
                   </div>
                 </th>
                 <th className="px-8 py-5 text-right">Model Confidence</th>
+                <th className="px-8 py-5 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -451,15 +517,6 @@ export default function PredictionPage() {
                       {!p.is_suspicious && <CheckCircle className="h-3 w-3 mr-2" />}
                       {p.status}
                     </span>
-                    {p.top_features && (
-                      <button 
-                        onClick={() => setExpandedNode(expandedNode === idx ? null : idx)}
-                        className="ml-3 p-2 rounded-full hover:bg-slate-200 text-slate-500 hover:text-amber-600 transition-colors shadow-sm bg-white border border-slate-200"
-                        title="View AI Explanation"
-                      >
-                        <Lightbulb className="h-4 w-4 text-amber-500" />
-                      </button>
-                    )}
                   </td>
                   <td className="px-8 py-5">
                     <div className="flex items-center">
@@ -479,44 +536,17 @@ export default function PredictionPage() {
                       {p.confidence}
                     </span>
                   </td>
+                  <td className="px-8 py-5 text-center">
+                    <button
+                      onClick={() => setInvestigatingNode(p)}
+                      disabled={!p.top_features || p.top_features.length === 0}
+                      className="group inline-flex items-center px-4 py-2.5 bg-gradient-to-r from-[#424B6B] to-[#353D5B] hover:from-[#353D5B] hover:to-[#2A3350] text-white text-[12px] font-bold rounded-xl transition-all duration-300 shadow-md shadow-slate-900/10 hover:shadow-lg hover:shadow-slate-900/20 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-md"
+                    >
+                      <Eye className="h-3.5 w-3.5 mr-2 group-hover:scale-110 transition-transform duration-200" />
+                      Investigate AI
+                    </button>
+                  </td>
                 </tr>
-                {expandedNode === idx && p.top_features && (
-                  <tr className="bg-slate-50/80 border-t border-b border-slate-100 shadow-inner">
-                    <td colSpan="4" className="px-8 py-6">
-                      <div className="flex items-start">
-                        <div className="p-3 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl mr-5 shadow-sm border border-amber-200">
-                          <Lightbulb className="h-6 w-6 text-amber-600" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="text-base font-black text-slate-900 mb-1 flex items-center tracking-tight">
-                            AI Explanation <span className="ml-3 text-[10px] px-2 py-0.5 rounded-full bg-slate-200 uppercase text-slate-600 font-black tracking-widest">Top Risk Factors</span>
-                          </h4>
-                          <p className="text-sm text-slate-500 mb-5 font-medium max-w-2xl leading-relaxed">
-                            The anomaly detection model flagged this node primarily due to the following anomalous telemetry patterns compared to expected baselines:
-                          </p>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                            {p.top_features.map((tf, i) => (
-                              <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden group hover:border-amber-300 transition-colors">
-                                <div className="absolute top-0 left-0 w-1.5 h-full bg-red-400 opacity-80"></div>
-                                <p className="text-[11px] font-black uppercase text-slate-400 tracking-widest mb-3 truncate pr-2" title={tf.feature}>{tf.feature}</p>
-                                <div className="flex justify-between items-end">
-                                  <div>
-                                    <p className="text-[10px] uppercase text-slate-400 font-bold tracking-widest mb-0.5">Value</p>
-                                    <p className="text-lg font-black text-slate-900">{tf.original_value.toFixed(2)}</p>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="text-[10px] uppercase text-red-400 font-bold tracking-widest mb-0.5">Risk Impact</p>
-                                    <p className="text-lg font-black text-red-600">+{tf.shap_value.toFixed(3)}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
                 </React.Fragment>
                 );
               })}
@@ -529,6 +559,196 @@ export default function PredictionPage() {
           </div>
         )}
       </div>
+
+      {/* AI Investigation Modal */}
+      {investigatingNode && (() => {
+        const explanation = generateAIExplanation(investigatingNode);
+        const riskPct = investigatingNode.risk_score;
+        const isHighRisk = riskPct >= 70;
+        const isMedRisk = riskPct >= 40 && riskPct < 70;
+        const riskColor = isHighRisk ? '#ef4444' : isMedRisk ? '#f59e0b' : '#10b981';
+        const riskLabel = isHighRisk ? 'Critical' : isMedRisk ? 'Elevated' : 'Low';
+        const circumference = 2 * Math.PI * 52;
+        const strokeOffset = circumference - (riskPct / 100) * circumference;
+
+        return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          {/* Animated Backdrop */}
+          <div 
+            className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm modal-backdrop-enter" 
+            onClick={() => setInvestigatingNode(null)}
+          ></div>
+          
+          {/* Modal Panel */}
+          <div className="modal-panel-enter bg-white rounded-[24px] shadow-[0_32px_80px_rgba(0,0,0,0.12),0_0_1px_rgba(0,0,0,0.08)] w-full max-w-[740px] relative z-10 overflow-hidden flex flex-col max-h-[90vh]">
+            
+            {/* ── Gradient Header ── */}
+            <div className="relative px-8 pt-8 pb-6 bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 border-b border-slate-100/80">
+              {/* Decorative corner accent */}
+              <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-emerald-100/40 to-transparent rounded-bl-[80px] pointer-events-none"></div>
+              
+              <div className="relative flex items-start justify-between">
+                {/* Left: Node info */}
+                <div className="flex-1 pr-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-400 bg-slate-100 px-3 py-1 rounded-lg">
+                      Node Analysis
+                    </span>
+                    <span className={`text-[11px] font-black uppercase tracking-[0.15em] px-3 py-1 rounded-lg ${
+                      isHighRisk ? 'bg-red-50 text-red-600' : isMedRisk ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
+                    }`}>
+                      {riskLabel} Risk
+                    </span>
+                  </div>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2">
+                    {investigatingNode.id || 'Unknown Node'}
+                  </h2>
+                  <p className="text-sm text-slate-400 font-medium">
+                    Confidence: <span className="text-slate-600 font-bold">{investigatingNode.confidence}</span>
+                    <span className="mx-2 text-slate-200">|</span>
+                    Status: <span className={`font-bold ${investigatingNode.is_suspicious ? 'text-red-500' : 'text-emerald-500'}`}>
+                      {investigatingNode.status}
+                    </span>
+                  </p>
+                </div>
+                
+                {/* Right: Animated Risk Ring */}
+                <div className="flex-shrink-0 risk-badge-pulse">
+                  <div className="relative w-[120px] h-[120px]">
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+                      <circle cx="60" cy="60" r="52" fill="none" stroke="#f1f5f9" strokeWidth="7" />
+                      <circle 
+                        cx="60" cy="60" r="52" fill="none" 
+                        stroke={riskColor}
+                        strokeWidth="7" 
+                        strokeLinecap="round"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={strokeOffset}
+                        className="progress-fill-animate drop-shadow-sm"
+                        style={{ '--target-width': `${riskPct}%`, animationName: 'none', transition: 'stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1)' }}
+                        ref={(el) => { if (el) setTimeout(() => { el.style.strokeDashoffset = strokeOffset; }, 50); }}
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-2xl font-black" style={{ color: riskColor }}>{riskPct.toFixed(1)}</span>
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">Risk Score</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* AI Active Banner */}
+              <div className="ai-active-glow mt-5 flex items-center px-4 py-3 bg-emerald-50/60 border border-emerald-200/50 rounded-xl">
+                <div className="relative mr-3">
+                  <CheckCircle className="w-5 h-5 text-emerald-500" />
+                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-white"></span>
+                </div>
+                <span className="text-[13px] font-bold text-emerald-700">AI-Powered Analysis Active</span>
+                <div className="ml-auto flex gap-1">
+                  <span className="evidence-dot w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span className="evidence-dot w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span className="evidence-dot w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Scrollable Body ── */}
+            <div className="p-8 overflow-y-auto modal-scroll">
+              <div className="modal-section-stagger space-y-5">
+                
+                {/* ─ Primary Hypothesis ─ */}
+                <div className="group relative bg-gradient-to-br from-[#F8F9FC] to-[#F3F4F8] border border-slate-200/60 rounded-2xl p-6 hover:border-slate-300/80 transition-all duration-300 hover:shadow-md">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-indigo-400 to-indigo-600 rounded-l-2xl opacity-70 group-hover:opacity-100 transition-opacity"></div>
+                  <h3 className="flex items-center text-slate-800 font-bold text-[15px] mb-3 pl-3">
+                    <div className="p-1.5 bg-indigo-100 rounded-lg mr-2.5">
+                      <Lightbulb className="w-4 h-4 text-indigo-500" />
+                    </div>
+                    Primary Hypothesis
+                  </h3>
+                  <p className="text-slate-600 text-[13px] leading-[1.75] pl-3">
+                    {explanation.primaryHypothesis}
+                  </p>
+                </div>
+                
+                {/* ─ Supporting Evidence ─ */}
+                <div className="group relative bg-white border border-slate-200/60 rounded-2xl p-6 hover:border-blue-200/80 transition-all duration-300 hover:shadow-md">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-400 to-cyan-500 rounded-l-2xl opacity-70 group-hover:opacity-100 transition-opacity"></div>
+                  <h3 className="flex items-center text-slate-800 font-bold text-[15px] mb-5 pl-3">
+                    <div className="p-1.5 bg-blue-100 rounded-lg mr-2.5">
+                      <FileText className="w-4 h-4 text-blue-500" />
+                    </div>
+                    Supporting Evidence
+                    <span className="ml-auto text-[10px] font-bold uppercase tracking-widest text-slate-300 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
+                      {explanation.supportingEvidence.length} factor{explanation.supportingEvidence.length !== 1 ? 's' : ''}
+                    </span>
+                  </h3>
+                  <div className="space-y-4 pl-3">
+                    {explanation.supportingEvidence.map((evidence, i) => (
+                      <div key={i} className="group/item flex items-start p-4 bg-slate-50/70 rounded-xl border border-transparent hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-300 cursor-default">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mr-4 mt-0.5 shadow-sm group-hover/item:shadow-md group-hover/item:scale-105 transition-all duration-300">
+                          <span className="text-white text-[11px] font-black">{i + 1}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <span className="font-bold text-slate-800 text-[13px]">{evidence.title}</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-500 border border-red-100">
+                              Impact: {evidence.impact}
+                            </span>
+                          </div>
+                          <p className="text-slate-500 text-[12.5px] leading-relaxed">{evidence.explanation}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Shimmer divider */}
+                <div className="shimmer-bar h-[2px] rounded-full mx-4"></div>
+                
+                {/* ─ Recommended Actions ─ */}
+                <div className="group relative bg-gradient-to-br from-amber-50/40 to-orange-50/30 border border-amber-200/50 rounded-2xl p-6 hover:border-amber-300/70 transition-all duration-300 hover:shadow-md">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-amber-400 to-orange-500 rounded-l-2xl opacity-70 group-hover:opacity-100 transition-opacity"></div>
+                  <h3 className="flex items-center text-slate-800 font-bold text-[15px] mb-5 pl-3">
+                    <div className="p-1.5 bg-amber-100 rounded-lg mr-2.5">
+                      <ClipboardList className="w-4 h-4 text-amber-600" />
+                    </div>
+                    Recommended Actions
+                    <span className="ml-auto text-[10px] font-bold uppercase tracking-widest text-amber-400 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100">
+                      Action Plan
+                    </span>
+                  </h3>
+                  <ol className="space-y-3 pl-3">
+                    {explanation.recommendedActions.map((action, i) => (
+                      <li key={i} className="group/action flex items-start p-3.5 rounded-xl hover:bg-white/80 transition-all duration-300 cursor-default">
+                        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[11px] font-black flex items-center justify-center mr-3.5 mt-0.5 shadow-sm group-hover/action:shadow-md group-hover/action:scale-110 transition-all duration-300">
+                          {i + 1}
+                        </span>
+                        <span className="text-slate-600 text-[13px] leading-relaxed pt-1">{action}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            </div>
+            
+            {/* ── Sticky Footer ── */}
+            <div className="px-8 py-5 border-t border-slate-100 bg-gradient-to-r from-slate-50/80 to-white flex items-center justify-between">
+              <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.5)]"></div>
+                Generated by AI anomaly engine
+              </div>
+              <button 
+                onClick={() => setInvestigatingNode(null)}
+                className="group px-7 py-2.5 bg-gradient-to-r from-[#424B6B] to-[#353D5B] hover:from-[#353D5B] hover:to-[#2A3350] text-white text-[13px] font-bold rounded-xl transition-all duration-300 shadow-lg shadow-slate-900/10 hover:shadow-xl hover:shadow-slate-900/20 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md"
+              >
+                Close
+                <span className="ml-2 inline-block group-hover:translate-x-0.5 transition-transform duration-200">✕</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        );
+      })()}
     </div>
 
   );
