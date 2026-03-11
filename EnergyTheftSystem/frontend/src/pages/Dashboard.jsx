@@ -72,7 +72,7 @@ export default function Dashboard() {
                   <metric.icon className={`h-28 w-28 ${metric.color}`} />
                 </div>
                 <div className="flex items-center space-x-3 mb-5">
-                  <div className={`p-2.5 rounded-xl ${item.bgColor}`}>
+                  <div className={`p-2.5 rounded-xl ${metric.bgColor}`}>
                     <metric.icon className={`h-6 w-6 ${metric.color}`} />
                   </div>
                   <h3 className="text-slate-500 font-bold uppercase tracking-wider text-xs">{metric.label}</h3>
