@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useLocation, Navigate, Link } from 'react-router-dom';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
-import { ArrowLeft, MapPin, ShieldAlert, BadgeCheck, AlertTriangle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, MapPin, ShieldAlert, BadgeCheck, AlertTriangle, CheckCircle, Eye } from 'lucide-react';
 import { useEffect } from 'react';
 import 'leaflet/dist/leaflet.css';
+import InvestigationModal from '../components/InvestigationModal';
 
 // Auto-fit bounds to all markers
 function FitBounds({ bounds }) {
@@ -31,6 +32,7 @@ function getMarkerRadius(riskScore) {
 
 export default function AnomalyMapPage() {
   const location = useLocation();
+  const [investigatingMeter, setInvestigatingMeter] = useState(null);
 
   // Prefer router state, but fall back to sessionStorage so navbar link / refresh still works
   let data = location.state?.results;
@@ -219,6 +221,13 @@ export default function AnomalyMapPage() {
                                 </span>
                               </div>
                             </div>
+                            <button
+                              onClick={() => setInvestigatingMeter(p)}
+                              className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 bg-primary-600 text-white text-xs font-semibold rounded-lg hover:bg-primary-700 transition-colors"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              Deep Investigation
+                            </button>
                           </div>
                         </Popup>
                       </CircleMarker>
@@ -252,6 +261,15 @@ export default function AnomalyMapPage() {
           )}
         </div>
       </div>
+
+      {/* Investigation Modal */}
+      {investigatingMeter && (
+        <InvestigationModal
+          meter={investigatingMeter}
+          allMeters={predictions}
+          onClose={() => setInvestigatingMeter(null)}
+        />
+      )}
     </div>
   );
 }

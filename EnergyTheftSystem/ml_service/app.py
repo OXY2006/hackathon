@@ -4,9 +4,13 @@ import joblib
 import random
 import math
 import pandas as pd
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 import io
+from dotenv import load_dotenv
+from math import radians, sin, cos, sqrt, atan2
+
+load_dotenv()  # Load environment variables
 
 # --- Simulated coordinate generation around Hyderabad, India ---
 HYDERABAD_CENTER = (17.385, 78.4867)
@@ -307,6 +311,84 @@ async def predict(file: UploadFile = File(...)):
         
     except Exception as e:
         print(f"Error processing prediction request: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+def haversine_distance(lat1, lon1, lat2, lon2):
+    """Calculate distance in km between two lat/lon points."""
+    R = 6371  # Earth radius in km
+    dlat = radians(lat2 - lat1)
+    dlon = radians(lon2 - lon1)
+    a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
+    c = 2 * atan2(sqrt(a), sqrt(1-a))
+    return R * c
+
+
+@app.post("/investigate/{meter_id}")
+async def investigate_meter(meter_id: str, request: Request):
+    """Deep-dive AI investigation of a specific meter using Gemini."""
+    try:
+        from gemini_explainer import generate_investigation_report
+        
+        body = await request.json()
+        target_meter = body.get("meter")
+        all_meters = body.get("all_meters", [])
+        
+        if not target_meter:
+            raise HTTPException(status_code=400, detail="No meter data provided")
+        
+        # Find nearby meters within 5km
+        target_lat = target_meter.get("latitude", 0)
+        target_lon = target_meter.get("longitude", 0)
+        
+        nearby_meters = []
+        for meter in all_meters:
+            if meter.get("meter_id") == meter_id:
+                continue
+            
+            distance = haversine_distance(
+                target_lat, target_lon,
+                meter.get("latitude", 0),
+                meter.get("longitude", 0)
+            )
+            
+            if distance <= 5.0:
+                nearby_meters.append({
+                    "meter_id": meter.get("meter_id"),
+                    "risk_score": meter.get("prediction", {}).get("theft_probability", 0) * 100,
+                    "is_suspicious": meter.get("prediction", {}).get("is_theft", False),
+                    "distance_km": round(distance, 2),
+                })
+        
+        print(f"[Investigation] Analyzing {meter_id}, found {len(nearby_meters)} nearby meters")
+        
+        # Generate report
+        prediction = target_meter.get("prediction", {})
+        investigation = generate_investigation_report(
+            meter_id=meter_id,
+            risk_score=prediction.get("theft_probability", 0) * 100,
+            risk_level=target_meter.get("risk_level", "unknown"),
+            features=prediction.get("features", {}),
+            top_features=prediction.get("top_features", []),
+            nearby_meters=nearby_meters,
+        )
+        
+        return {
+            "success": True,
+            "meter_id": meter_id,
+            "investigation": investigation,
+            "context": {
+                "nearby_meters": len(nearby_meters),
+                "suspicious_nearby": len([m for m in nearby_meters if m.get("is_suspicious")]),
+                "cluster_risk": "HIGH" if len([m for m in nearby_meters if m.get("is_suspicious")]) >= 3 else "LOW",
+            },
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
