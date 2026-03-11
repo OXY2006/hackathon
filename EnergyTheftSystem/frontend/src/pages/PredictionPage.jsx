@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useLocation, Navigate, Link } from 'react-router-dom';
-import { AlertTriangle, CheckCircle, ArrowLeft, ShieldAlert, BadgeCheck, BarChart2, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
+import { AlertTriangle, CheckCircle, ArrowLeft, ShieldAlert, BadgeCheck, BarChart2, ChevronLeft, ChevronRight, MapPin, Lightbulb } from 'lucide-react';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
 
@@ -51,6 +51,7 @@ export default function PredictionPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageInput, setPageInput] = useState('1');
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' = highest risk first, 'asc' = lowest risk first
+  const [expandedNode, setExpandedNode] = useState(null);
   const itemsPerPage = 15;
 
   if (!data || !data.predictions) {
@@ -412,11 +413,12 @@ export default function PredictionPage() {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {paginatedData.map((p, idx) => (
-                <tr key={idx} className={`hover:bg-slate-50/50 transition-colors group ${p.is_suspicious ? 'bg-red-50/30' : ''}`}>
+                <React.Fragment key={idx}>
+                <tr className={`hover:bg-slate-50/50 transition-colors group ${p.is_suspicious ? 'bg-red-50/30' : ''}`}>
                   <td className="px-8 py-5 text-slate-600 font-mono text-xs font-bold">
                     {p.id || `NODE-${(p.index + 1).toString().padStart(4, '0')}`}
                   </td>
-                  <td className="px-8 py-5">
+                  <td className="px-8 py-5 flex items-center">
                     <span className={`inline-flex items-center px-4 py-1.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm border ${
                       p.is_suspicious 
                         ? 'bg-red-50 text-red-600 border-red-100' 
@@ -426,6 +428,15 @@ export default function PredictionPage() {
                       {!p.is_suspicious && <CheckCircle className="h-3 w-3 mr-2" />}
                       {p.status}
                     </span>
+                    {p.top_features && (
+                      <button 
+                        onClick={() => setExpandedNode(expandedNode === idx ? null : idx)}
+                        className="ml-3 p-2 rounded-full hover:bg-slate-200 text-slate-500 hover:text-amber-600 transition-colors shadow-sm bg-white border border-slate-200"
+                        title="View AI Explanation"
+                      >
+                        <Lightbulb className="h-4 w-4 text-amber-500" />
+                      </button>
+                    )}
                   </td>
                   <td className="px-8 py-5">
                     <div className="flex items-center">
@@ -446,6 +457,44 @@ export default function PredictionPage() {
                     </span>
                   </td>
                 </tr>
+                {expandedNode === idx && p.top_features && (
+                  <tr className="bg-slate-50/80 border-t border-b border-slate-100 shadow-inner">
+                    <td colSpan="4" className="px-8 py-6">
+                      <div className="flex items-start">
+                        <div className="p-3 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl mr-5 shadow-sm border border-amber-200">
+                          <Lightbulb className="h-6 w-6 text-amber-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-base font-black text-slate-900 mb-1 flex items-center tracking-tight">
+                            AI Explanation <span className="ml-3 text-[10px] px-2 py-0.5 rounded-full bg-slate-200 uppercase text-slate-600 font-black tracking-widest">Top Risk Factors</span>
+                          </h4>
+                          <p className="text-sm text-slate-500 mb-5 font-medium max-w-2xl leading-relaxed">
+                            The anomaly detection model flagged this node primarily due to the following anomalous telemetry patterns compared to expected baselines:
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            {p.top_features.map((tf, i) => (
+                              <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden group hover:border-amber-300 transition-colors">
+                                <div className="absolute top-0 left-0 w-1.5 h-full bg-red-400 opacity-80"></div>
+                                <p className="text-[11px] font-black uppercase text-slate-400 tracking-widest mb-3 truncate pr-2" title={tf.feature}>{tf.feature}</p>
+                                <div className="flex justify-between items-end">
+                                  <div>
+                                    <p className="text-[10px] uppercase text-slate-400 font-bold tracking-widest mb-0.5">Value</p>
+                                    <p className="text-lg font-black text-slate-900">{tf.original_value.toFixed(2)}</p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-[10px] uppercase text-red-400 font-bold tracking-widest mb-0.5">Risk Impact</p>
+                                    <p className="text-lg font-black text-red-600">+{tf.shap_value.toFixed(3)}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>

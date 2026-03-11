@@ -4,6 +4,7 @@ import joblib
 import random
 import math
 import pandas as pd
+import shap
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import io
@@ -290,6 +291,52 @@ async def predict(file: UploadFile = File(...)):
                 record["id"] = str(df_raw.iloc[i][id_col])
                 
             results.append(record)
+            
+        # ====== NEW SHAP EXPLAINABILITY CODE ====== #
+        try:
+            # Sort indices by risk score descending to find the top 15 suspicious records
+            sorted_indices = sorted(range(len(results)), key=lambda k: results[k]["risk_score"], reverse=True)
+            top_suspicious_indices = [idx for idx in sorted_indices if results[idx]["is_suspicious"]][:15]
+            
+            if top_suspicious_indices:
+                # If model is a VotingClassifier, grab its first estimator for TreeExplainer
+                base_estimator = getattr(model, "estimators_", [model])[0]
+                explainer = shap.TreeExplainer(base_estimator)
+                feature_names = features_df.columns.tolist()
+                
+                for idx in top_suspicious_indices:
+                    # Explainer expects the scaled features since the model was trained on them
+                    instance_scaled = X_scaled[idx:idx+1]
+                    instance_original = features_df.iloc[idx]
+                    
+                    shap_values = explainer.shap_values(instance_scaled)
+                    
+                    # shap_values could be a list (one array per class) or a single array
+                    if isinstance(shap_values, list):
+                        # Index 1 corresponds to "suspicious" class for tree classifiers
+                        sv = shap_values[1][0]
+                    else:
+                        sv = shap_values[0]
+                        
+                    # Pair features with their SHAP values and original values
+                    feature_shaps = []
+                    for f_name, s_val, o_val in zip(feature_names, sv, instance_original):
+                        feature_shaps.append({
+                            "feature": f_name.replace("_", " ").title(), # Format nicely
+                            "shap_value": float(s_val),
+                            "original_value": float(o_val)
+                        })
+                        
+                    # Sort by SHAP value descending (most positive contribution to suspicious classification)
+                    feature_shaps.sort(key=lambda x: x["shap_value"], reverse=True)
+                    
+                    # Attach top 3 features to the result record out of 116 features for frontend explanation
+                    results[idx]["top_features"] = feature_shaps[:3]
+        except Exception as e:
+            print(f"SHAP explanation failed: {e}")
+            import traceback
+            traceback.print_exc()
+        # ========================================== #
             
         # Aggregate statistics
         total = len(results)
