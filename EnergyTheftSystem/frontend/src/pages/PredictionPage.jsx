@@ -11,86 +11,37 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import ComparisonPanel from '../components/ComparisonPanel';
 import { useNotifications } from '../contexts';
+import { MOCK_REPORTS } from '../utils/mockReports';
 
 function generateAIExplanation(node) {
-  if (!node || !node.top_features || node.top_features.length === 0) {
-    return {
-      primaryHypothesis: "The analysis indicates unusually high peak draws that do not correlate with historical usage profiles or similar consumers, strongly suggesting an unmetered high-draw appliance may be connected via a **partial bypass**.",
-      supportingEvidence: [
-        {
-          title: "usage_variance",
-          value: (50 + Math.random() * 40).toFixed(3),
-          impact: (0.1 + Math.random() * 0.3).toFixed(3),
-          explanation: `The extreme volatility in usage suggests that loads are not being naturally cycled, but rather "switched" between metered and unmetered states.`
-        },
-        {
-          title: "max_draw_kw",
-          value: (50 + Math.random() * 45).toFixed(3),
-          impact: (0.05 + Math.random() * 0.2).toFixed(3),
-          explanation: `Unusually high maximum draws indicate anomalous spikes that trigger risk thresholds, often pointing to an external, unmetered heavy load.`
-        }
-      ],
-      recommendedActions: [
-        'Dispatch a field inspection team to physically examine the meter and wiring for bypass devices or jumper cables.',
-        'Compare current consumption patterns with historical usage for the same billing period over the past 2–3 years.',
-        'Flag this account for the next billing audit cycle and escalate to revenue protection.'
-      ]
-    };
+  // Deterministically assign one of the 15 highly detailed unique reports based on the Node ID
+  const pseudoStr = String(node?.id || node?.index || '0');
+  let hash = 0;
+  for (let i = 0; i < pseudoStr.length; i++) {
+    hash = Math.imul(31, hash) + pseudoStr.charCodeAt(i) | 0;
   }
+  const reportIndex = Math.abs(hash) % MOCK_REPORTS.length;
+  
+  // Clone the mock report so we don't mutate the global constant
+  const baseReport = JSON.parse(JSON.stringify(MOCK_REPORTS[reportIndex]));
 
-  const topFeature = node.top_features[0].feature.toLowerCase();
-  let primaryHypothesis = "";
-  if (topFeature.includes("variance") || topFeature.includes("std")) {
-    primaryHypothesis = "The consumer is likely employing a **manual bypass or \"jumper\" mechanism** used in conjunction with a **shunting device**, allowing them to selectively divert heavy loads around the meter during peak usage hours while maintaining a minimal \"baseline\" presence to avoid detection.";
-  } else if (topFeature.includes("zero") || topFeature.includes("min")) {
-    primaryHypothesis = "The meter is experiencing periodic complete isolation from the circuit. This is characteristic of a **remote-controlled relay or physical bridge** that completely halts metered consumption during certain periods.";
-  } else if (topFeature.includes("max") || topFeature.includes("peak")) {
-    primaryHypothesis = "The analysis indicates unusually high peak draws that do not correlate with historical usage profiles or similar consumers, suggesting an unmetered high-draw appliance may be connected via a **partial bypass**.";
-  } else {
-    primaryHypothesis = "Anomalous telemetry patterns have been detected that deviate significantly from expected baselines. This combination of factors strongly suggests sophisticated tampering to obscure actual consumption.";
+  // If the node has actual SHAP features from the backend, inject them into the mock report's evidence!
+  if (node && node.top_features && node.top_features.length > 0) {
+    // Map over the real features and fuse them with the explanations from the mock report
+    baseReport.supportingEvidence = node.top_features.slice(0, 2).map((tf, idx) => {
+      // Use the explanation from the mock report if available, otherwise generic
+      const mockExplanation = baseReport.supportingEvidence[idx]?.explanation || "This specific metric deviates significantly from the expected baseline.";
+      
+      return {
+        title: tf.feature,
+        value: tf.original_value.toFixed(3),
+        impact: tf.shap_value.toFixed(3),
+        explanation: mockExplanation
+      };
+    });
   }
-
-  const supportingEvidence = node.top_features.map(tf => {
-    let explanation = "";
-    const featureNameLower = tf.feature.toLowerCase();
-    
-    if (featureNameLower.includes("variance") || featureNameLower.includes("std")) {
-      explanation = `The extreme volatility in usage suggests that loads are not being naturally cycled, but rather "switched" between metered and unmetered states.`;
-    } else if (featureNameLower.includes("zero") || featureNameLower.includes("min")) {
-      explanation = `These streaks indicate periods where the meter is completely isolated from the circuit, pointing toward a "stop-start" tampering method.`;
-    } else if (featureNameLower.includes("max") || featureNameLower.includes("peak")) {
-      explanation = `Unusually high maximum draws indicate anomalous spikes that trigger risk thresholds, often pointing to an external, unmetered heavy load.`;
-    } else {
-      explanation = `This specific metric deviates significantly from the expected baseline.`;
-    }
-
-    return {
-      title: tf.feature,
-      value: tf.original_value.toFixed(3),
-      impact: tf.shap_value.toFixed(3),
-      explanation: explanation
-    };
-  });
-
-  const recommendedActions = [];
-  const allFeaturesLower = node.top_features.map(tf => tf.feature.toLowerCase()).join(' ');
-
-  if (allFeaturesLower.includes('variance') || allFeaturesLower.includes('std')) {
-    recommendedActions.push('Dispatch a field inspection team to physically examine the meter and wiring for bypass devices or jumper cables.');
-    recommendedActions.push('Compare current consumption patterns with historical usage for the same billing period over the past 2–3 years.');
-  }
-  if (allFeaturesLower.includes('zero') || allFeaturesLower.includes('min')) {
-    recommendedActions.push('Inspect the meter seal and casing for evidence of tampering, relay installations, or physical bridges.');
-    recommendedActions.push('Cross-reference zero-consumption windows with smart-meter logs.');
-  }
-  if (allFeaturesLower.includes('max') || allFeaturesLower.includes('peak')) {
-    recommendedActions.push('Audit the consumer\'s connected load declaration against the observed peak draw.');
-    recommendedActions.push('Install a secondary revenue-grade CT meter in parallel for a 30-day audit comparison.');
-  }
-  recommendedActions.push('Flag this account for the next billing audit cycle and escalate to revenue protection.');
-  recommendedActions.push('If tampering is confirmed, calculate estimated unbilled units and initiate recovery.');
-
-  return { primaryHypothesis, supportingEvidence, recommendedActions };
+  
+  return baseReport;
 }
 
 // Auto-fit bounds to all markers
