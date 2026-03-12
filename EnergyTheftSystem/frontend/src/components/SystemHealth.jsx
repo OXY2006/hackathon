@@ -9,7 +9,8 @@ export default function SystemHealth() {
   useEffect(() => {
     const check = async () => {
       try {
-        const res = await fetch('http://localhost:5000/model-info', { signal: AbortSignal.timeout(4000) });
+        const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+        const res = await fetch(`${apiBase}/model-info`, { signal: AbortSignal.timeout(4000) });
         setStatus(res.ok ? 'online' : 'offline');
       } catch {
         setStatus('offline');

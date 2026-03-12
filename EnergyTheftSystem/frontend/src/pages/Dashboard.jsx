@@ -28,7 +28,8 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchModelInfo = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/model-info');
+        const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+        const response = await axios.get(`${apiBase}/model-info`);
         setModelInfo(response.data);
       } catch (err) {
         console.error('Failed to fetch model info:', err);
