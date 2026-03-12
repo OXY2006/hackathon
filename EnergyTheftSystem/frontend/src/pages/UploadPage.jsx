@@ -87,7 +87,37 @@ export default function UploadPage() {
       });
 
       const payload = { results: response.data, filename: file.name };
-      sessionStorage.setItem('latestResults', JSON.stringify(payload));
+      
+      try {
+        sessionStorage.setItem('latestResults', JSON.stringify(payload));
+      } catch (e) {
+        console.warn('Session storage quota exceeded. Storing truncated results for performance.');
+        // Storage full - Store only summary and top 500 suspicious nodes to keep the UI functional
+        const litePredictions = response.data.predictions
+          ? response.data.predictions
+              .filter(p => p.is_suspicious)
+              .slice(0, 500)
+          : [];
+        
+        const litePayload = {
+          results: {
+            ...response.data,
+            predictions: litePredictions,
+            is_truncated: true,
+            original_count: response.data.predictions?.length || 0
+          },
+          filename: file.name
+        };
+        try {
+          sessionStorage.setItem('latestResults', JSON.stringify(litePayload));
+        } catch (innerE) {
+          // Even lite payload failed? Store ONLY summary
+          sessionStorage.setItem('latestResults', JSON.stringify({
+            results: { summary: response.data.summary, predictions: [], is_truncated: true },
+            filename: file.name
+          }));
+        }
+      }
       
       // Save to history & trigger notifications
       if (response.data.summary) {

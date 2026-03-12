@@ -384,6 +384,18 @@ export default function PredictionPage() {
   return (
     <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-page-reveal">
       
+      {data.is_truncated && (
+        <div className="mb-8 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl flex items-center gap-4 text-amber-800 dark:text-amber-200 animate-reveal">
+          <div className="p-2 bg-amber-100 dark:bg-amber-800 rounded-xl">
+            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-sm">Storage Limit Optimization Active</p>
+            <p className="text-xs opacity-80">This dataset is very large ({data.original_count.toLocaleString()} nodes). To maintain performance, we are currently displaying the <span className="font-bold">Summary</span> for all nodes but limiting the <span className="font-bold">Interactive Investigation</span> to the top 500 most suspicious anomalies.</p>
+          </div>
+        </div>
+      )}
+
       {/* Top Header */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between mb-10 gap-6 animate-reveal">
         <div>
